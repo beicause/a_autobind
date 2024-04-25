@@ -104,7 +104,9 @@ for cls_node in [x for x in tree.root_node.children if x.type == "class_specifie
 for fn in fn_list:
     if fn.is_static:
         print(
-            f"""ClassDB::bind_static_method("{fn.cls_name}", D_METHOD("{fn.id}"{'' if len(fn.args)==0 else ','+','.join(fn.args)}), &{fn.cls_name}::{fn.id}{'' if len(fn.defvals)==0 else ','+','.join(["DEFVAL("+v+")" for v in fn.defvals])});"""
+            f"""ClassDB::bind_static_method("{fn.cls_name}", D_METHOD("{fn.id}"{'' if len(fn.args)==0 else ','+','.join(['"'+a+'"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{'' if len(fn.defvals)==0 else ','+','.join(["DEFVAL("+v+")" for v in fn.defvals])});"""
         )
     else:
-        print(f"""ClassDB::bind_method(D_METHOD("{fn.id}"{'' if len(fn.args)==0 else ','+','.join(['"'+a+'"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{'' if len(fn.defvals)==0 else ','+','.join(["DEFVAL("+v+")" for v in fn.defvals])});""")
+        print(
+            f"""ClassDB::bind_method(D_METHOD("{fn.id}"{'' if len(fn.args)==0 else ','+','.join(['"'+a+'"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{'' if len(fn.defvals)==0 else ','+','.join(["DEFVAL("+v+")" for v in fn.defvals])});"""
+        )
