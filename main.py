@@ -43,6 +43,7 @@ class MethodDefine:
         self.is_static = is_static
         self.cls_name = cls_name
 
+fn_list: list[MethodDefine] = []
 
 for cls_node in [x for x in tree.root_node.children if x.type == "class_specifier"]:
     cls_name = str(cls_node.child(1).text, "utf8")
@@ -53,7 +54,6 @@ for cls_node in [x for x in tree.root_node.children if x.type == "class_specifie
     cursor.goto_first_child()
     start_public = False
     skip_one = False
-    fn_list: list[MethodDefine] = []
     while cursor.goto_next_sibling():
         node = cursor.node
         if node.type == "access_specifier":
@@ -94,6 +94,8 @@ for cls_node in [x for x in tree.root_node.children if x.type == "class_specifie
                 )
                 for p in parameters
             ]
+            if (id==cls_name or id=="~"+cls_name) and len(args)==0:
+                continue
             defvals = [
                 str(p.child(3).text, "utf8")
                 for p in parameters
