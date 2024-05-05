@@ -43,9 +43,12 @@ class MethodDefine:
         self.is_static = is_static
         self.cls_name = cls_name
 
+
 fn_list: list[MethodDefine] = []
 
-for cls_node in [x for x in tree.root_node.children if x.type == "class_specifier"]:
+for cls_node in [
+    x for x in traverse_node(tree.root_node) if x.type == "class_specifier"
+]:
     cls_name = str(cls_node.child(1).text, "utf8")
     field_decl = [x for x in cls_node.children if x.type == "field_declaration_list"]
     assert len(field_decl) > 0
@@ -94,7 +97,7 @@ for cls_node in [x for x in tree.root_node.children if x.type == "class_specifie
                 )
                 for p in parameters
             ]
-            if (id==cls_name or id=="~"+cls_name) and len(args)==0:
+            if (id == cls_name or id == "~" + cls_name) and len(args) == 0:
                 continue
             defvals = [
                 str(p.child(3).text, "utf8")
