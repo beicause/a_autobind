@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 import os
-import re
 from typing import Generator
 from tree_sitter import Node, Parser, Language, Tree
 import tree_sitter_cpp as cpp
