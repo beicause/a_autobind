@@ -1,12 +1,13 @@
-from argparse import ArgumentParser
 import os
+from argparse import ArgumentParser, Namespace
 from typing import Generator
-from tree_sitter import Node, Parser, Language, Tree
+
 import tree_sitter_cpp as cpp
+from tree_sitter import Language, Node, Parser
 
 args_parser = ArgumentParser()
 args_parser.add_argument("f", type=str)
-args = args_parser.parse_args()
+args: Namespace = args_parser.parse_args()
 file = os.path.splitext(str(args.f))[0]
 
 with open(file + ".h", "r") as f:
@@ -49,9 +50,12 @@ for cls_node in [
     x for x in traverse_node(tree.root_node) if x.type == "class_specifier"
 ]:
     cls_name = str(cls_node.child(1).text, "utf8")
-    field_decl = [x for x in cls_node.children if x.type == "field_declaration_list"]
-    assert len(field_decl) > 0
-    field_decl = field_decl[0]
+    field_decl_list = [
+        x for x in cls_node.children if x.type == "field_declaration_list"
+    ]
+    if len(field_decl_list) == 0:
+        continue
+    field_decl = field_decl_list[0]
     cursor = field_decl.walk()
     cursor.goto_first_child()
     start_public = False
@@ -76,11 +80,11 @@ for cls_node in [
                 node.child(0).type == "storage_class_specifier"
                 and node.child(0).text == b"static"
             )
-            fn_decl = [x for x in node.children if x.type == "function_declarator"]
-            if len(fn_decl) == 0:
+            fn_decl_list = [x for x in node.children if x.type == "function_declarator"]
+            if len(fn_decl_list) == 0:
                 continue
             else:
-                fn_decl = fn_decl[0]
+                fn_decl = fn_decl_list[0]
             id = str(fn_decl.child(0).text, "utf8")
             parameters_node: Node = fn_decl.child(1)
             parameters = [
@@ -89,23 +93,30 @@ for cls_node in [
                 if x.type == "parameter_declaration"
                 or x.type == "optional_parameter_declaration"
             ]
-            args = [
+            args_list = [
                 str(
                     [a for a in traverse_node(p) if a.type == "identifier"][0].text,
                     "utf8",
                 )
                 for p in parameters
             ]
-            if (id == cls_name or id == "~" + cls_name) and len(args) == 0:
+
+            if (id == cls_name or id == "~" + cls_name) and len(args_list) == 0:
                 continue
             defvals = [
                 str(p.child(3).text, "utf8")
                 for p in parameters
                 if p.type == "optional_parameter_declaration"
             ]
-            fn_list.append(MethodDefine(id, args, defvals, is_static, cls_name))
+            fn_list.append(MethodDefine(id, args_list, defvals, is_static, cls_name))
+
+last_cls_name = ""
 
 for fn in fn_list:
+    if fn.cls_name != last_cls_name:
+        print("\n")
+        last_cls_name = fn.cls_name
+
     if fn.is_static:
         print(
             f"""ClassDB::bind_static_method("{fn.cls_name}", D_METHOD("{fn.id}"{'' if len(fn.args)==0 else ','+','.join(['"'+a+'"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{'' if len(fn.defvals)==0 else ','+','.join(["DEFVAL("+v+")" for v in fn.defvals])});"""
