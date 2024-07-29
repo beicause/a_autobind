@@ -14,7 +14,7 @@ with open(file + ".h", "r") as f:
     code_header = f.read()
 
 parser = Parser()
-parser.set_language(Language(cpp.language(), "cpp"))
+parser.set_language(Language(cpp.language()))
 tree = parser.parse(bytes(code_header, "utf8"))
 
 
